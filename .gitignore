@@ -1,0 +1,16 @@
+# Qlot local dependency tree
+.qlot/
+qlfile.lock
+
+# FASL compilation artifacts
+**/*.fasl
+**/*.fas
+**/*.lib
+**/*.pfsl
+**/*.dfsl
+**/*.ufsl
+**/*.abcl
+
+# Roswell build output
+*.ros.d/
+

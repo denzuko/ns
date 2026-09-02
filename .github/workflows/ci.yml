@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  tests:
+    name: Spec Tests (${{ matrix.lisp }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lisp: [sbcl-bin, ccl-bin, ecl]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: 40ants/setup-lisp@v4
+        env:
+          LISP: ${{ matrix.lisp }}
+
+      - name: Install qlot
+        run: ros install qlot
+
+      - name: Install dependencies
+        run: qlot install
+
+      - name: Run full spec suite
+        if: matrix.lisp != 'ecl'
+        run: |
+          qlot exec ros \
+            -e "(asdf:load-asd (merge-pathnames #P\"ns.asd\" (uiop:getcwd)))" \
+            -e "(ql:quickload :bordeaux-threads :silent t)" \
+            -e "(asdf:load-system :ns/tests)" \
+            -e "(uiop:quit (unless (fiveam:run! 'ns-tests::ns-suite) 1))"
+
+      - name: Run macro spec suite (ecl — 40ants-doc-full incompatible)
+        if: matrix.lisp == 'ecl'
+        run: |
+          qlot exec ros \
+            -e "(asdf:load-asd (merge-pathnames #P\"ns.asd\" (uiop:getcwd)))" \
+            -e "(asdf:load-system :ns)" \
+            -e "(asdf:load-system :fiveam)" \
+            -e "(load (merge-pathnames #P\"t/ns.lisp\" (uiop:getcwd)))" \
+            -e "(uiop:quit (unless (fiveam:run! 'ns-tests::ns-suite) 1))"
